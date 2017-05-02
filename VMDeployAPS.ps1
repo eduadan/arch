@@ -1,0 +1,134 @@
+<#
+    .SYNOPSIS
+        Set Static IP address with DHCP information
+    .DESCRIPTION
+        Set Static IP address with DHCP information
+	.NOTES
+		Version:        1.0
+		Author:         Juan Mercade (juan.m.mercade@ey.com)
+		Creation Date:  2016-10
+	
+    .EXAMPLE
+        .\Set-StaticIPfromDHCP.ps1
+#>
+
+[CmdletBinding()] Param(
+    [Parameter(Position=1,Mandatory=$false)] [switch]$LocalStart1
+
+
+	
+    )		
+
+Get-Process | Out-File -filepath C:\Windows\temp\process.txt
+
+if(!$LocalStart1)
+{
+
+Copy-Item C:\Packages\Plugins\Microsoft.Compute.CustomScriptExtension\1.8\Downloads\0\*.ps1 c:\windows\temp -ErrorAction SilentlyContinue
+Copy-Item C:\Packages\Plugins\Microsoft.Compute.CustomScriptExtension\1.8\Downloads\1\*.ps1 c:\windows\temp -ErrorAction SilentlyContinue
+Copy-Item C:\Packages\Plugins\Microsoft.Compute.CustomScriptExtension\1.8\Downloads\2\*.ps1 c:\windows\temp -ErrorAction SilentlyContinue
+Copy-Item C:\Packages\Plugins\Microsoft.Compute.CustomScriptExtension\1.8\Downloads\3\*.ps1 c:\windows\temp -ErrorAction SilentlyContinue
+
+$IPType = "IPv4"
+
+try {
+	$adapter = Get-NetAdapter | ? {$_.Status -eq "up"}
+	$interface = $adapter | Get-NetIPInterface -AddressFamily $IPType
+	$IP = ($adapter | Get-NetIPConfiguration).IPv4Address.IPAddress
+	$MaskBits = (Get-NetIPAddress $IP).PrefixLength
+	$Gateway = ($adapter | Get-NetIPConfiguration).Ipv4DefaultGateway.NextHop
+	$DNS = ($adapter | Get-NetIPConfiguration).DNSServer.ServerAddresses
+	
+	If ($interface.Dhcp -eq "Enabled") {
+		
+		$interface | Set-NetIPInterface -DHCP Disabled
+		
+		If (($adapter | Get-NetIPConfiguration).IPv4Address.IPAddress) {
+			$adapter | Remove-NetIPAddress -AddressFamily $IPType -Confirm:$false
+		}
+		
+		If (($adapter | Get-NetIPConfiguration).Ipv4DefaultGateway) {
+			$adapter | Remove-NetRoute -AddressFamily $IPType -Confirm:$false
+		}
+		
+		$adapter | New-NetIPAddress -AddressFamily $IPType -IPAddress $IP -PrefixLength $MaskBits -DefaultGateway $Gateway
+		$adapter | Set-DnsClientServerAddress -ServerAddresses $DNS
+		
+	}
+
+} catch {
+
+	Else {
+		Write-Host "DHCP Disabled" -ForegroundColor Yellow
+	}
+}
+
+#--------------------
+
+Start-Sleep -s 60
+
+# create new local admin
+# Create new local Admin user for script purposes
+$Computer = [ADSI]"WinNT://$Env:COMPUTERNAME,Computer"
+
+$LocalAdmin = $Computer.Create("User", "Shapower")
+$LocalAdmin.SetPassword("SPAdministrator!123")
+$LocalAdmin.SetInfo()
+$LocalAdmin.FullName = "Local Admin by Powershell"
+$LocalAdmin.SetInfo()
+$LocalAdmin.UserFlags = 64 + 65536 # ADS_UF_PASSWD_CANT_CHANGE + ADS_UF_DONT_EXPIRE_PASSWD
+$LocalAdmin.SetInfo()
+
+Start-Sleep -s 30
+
+$GroupObj = [ADSI]"WinNT://$env:ComputerName/Administrators"
+$GroupObj.Add("WinNT://$env:ComputerName/Shapower") 
+
+
+Start-Sleep -s 30
+
+#-------------------------------setting RUnOnce
+
+$RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+set-itemproperty $RunOnceKey "VMDeployAPS" 'C:\Windows\System32\WindowsPowerShell\v1.0\Powershell.exe -executionPolicy Unrestricted -File c:\windows\temp\VMDeployAPS.ps1 -LocalStart1'
+
+#---------------------------------
+
+
+#-------------
+#joinn domain
+#-----------
+
+$domain = "cloudapp.eydev.net"
+$password = "Sy9dO6EP3Bd6gV" | ConvertTo-SecureString -asPlainText -Force
+$username = "$domain\A.AzureAD.01"
+$credential = New-Object System.Management.Automation.PSCredential($username,$password)
+Add-Computer -DomainName $domain -OUPath "OU=SharePoint,OU=Servers,OU=MSP01,DC=cloudapp,DC=eydev,DC=net" -Credential $credential -Restart -Force
+
+}
+
+if ($LocalStart1)
+{
+
+Start-Sleep -s 60
+
+#------------ adding it-sharepoint team as local admin
+$GroupObj = [ADSI]"WinNT://$env:ComputerName/Administrators"
+$GroupObj.Add("WinNT://CLOUDAPP.EYDEV.NET/IT-SharePoint-Team") 
+
+Start-Sleep -s 30
+
+$GroupObj.Add("WinNT://CLOUDAPP.EYDEV.NET/A.SP2013USDASETUP.1")
+$GroupObj.Add("WinNT://CLOUDAPP.EYDEV.NET/A.SP2013USDAFARM.1")
+#--------------------
+
+
+
+		
+		$RunOnceKey = "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+		
+		Remove-ItemProperty -path $RunOnceKey -name "VMDeployAPS" -ErrorAction SilentlyContinue
+		
+
+
+}
