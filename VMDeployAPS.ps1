@@ -9,7 +9,7 @@
 if(!$LocalStart1 -and !$LocalStart2)
 {
 
-Copy-Item C:\Packages\Plugins\Microsoft.Compute.CustomScriptExtension\1.8\Downloads\0\*.ps1 c:\windows\temp
+#Copy-Item C:\Packages\Plugins\Microsoft.Compute.CustomScriptExtension\1.8\Downloads\0\*.ps1 c:\windows\temp
 # -ErrorAction SilentlyContinue
 
 #Get-Process | Out-File -filepath C:\Windows\temp\process.txt
