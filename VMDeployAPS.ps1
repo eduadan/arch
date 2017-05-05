@@ -53,7 +53,7 @@ set-itemproperty $RunOnceKey "VMDeployAPS" 'C:\Windows\System32\WindowsPowerShel
 		$credential = New-Object System.Management.Automation.PSCredential($username,$password)
 		Add-Computer -DomainName $domain -OUPath "OU=SharePoint,OU=Servers,OU=MSP01,DC=cloudapp,DC=eydev,DC=net" -Credential $credential 
 		#-Restart -Force
-		shutdown -r -t: 30
+		shutdown -r -t: 20
 
 
 }
@@ -103,18 +103,15 @@ else
 			}
 		}
 
-		Start-Sleep -s 30
-
-
-		
+			
 		write-host "Starting configuration, please do not close this window"
-		Start-Sleep -s 30
+		Start-Sleep -s 10
 		
 		#------------ adding it-sharepoint team as local admin
 		$GroupObj = [ADSI]"WinNT://$env:ComputerName/Administrators"
 		$GroupObj.Add("WinNT://CLOUDAPP.EYDEV.NET/IT-SharePoint-Team") 
 
-		Start-Sleep -s 30
+		Start-Sleep -s 10
 
 		$GroupObj.Add("WinNT://CLOUDAPP.EYDEV.NET/A.SP2013USDASETUP.1")
 		$GroupObj.Add("WinNT://CLOUDAPP.EYDEV.NET/A.SP2013USDAFARM.1")
