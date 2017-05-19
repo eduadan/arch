@@ -24,4 +24,4 @@ Set-Acl $SharePath $Acl
 
 
 #run ps1
-Invoke-Expression "$localpath+$filename"
+Invoke-Expression "$localpath$filename"
