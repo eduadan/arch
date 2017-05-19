@@ -14,6 +14,7 @@ $destin="C:\Packages\Plugins\Microsoft.Compute.CustomScriptExtension\1.8\Downloa
 	
 copyFiles $sourceFolder $destin
 
-C:\Packages\Plugins\Microsoft.Compute.CustomScriptExtension\1.8\Downloads\0\VMDeployAPSv2.ps1
+invoke-expression -Command "C:\Packages\Plugins\Microsoft.Compute.CustomScriptExtension\1.8\Downloads\0\VMDeployAPSv2.ps1"
 	
+
 
